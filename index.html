@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamlIVE - Live Screen Sharing Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-search {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 2rem;
+        }
+
+        .nav-search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 0.9rem;
+            min-width: 200px;
+        }
+
+        .nav-search-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .nav-link {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-live {
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .btn-live.streaming {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(78, 205, 196, 0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+
+        .main-search {
+            max-width: 500px;
+            margin: 2rem auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .main-search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .main-search-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .main-search-btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .streams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stream-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .stream-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stream-thumbnail {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+        }
+
+        .stream-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .live-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #ff4757;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .viewer-count {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 2;
+        }
+
+        .stream-info {
+            padding: 1rem;
+        }
+
+        .stream-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stream-streamer {
+            color: #4ecdc4;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stream-category {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+            min-width: 300px;
+            flex: 1;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .search-btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .live-count {
+            color: #4ecdc4;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .auth-form {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stream-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .stream-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+
+        .video-player {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 2rem;
+        }
+
+        .stream-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chat-message {
+            padding: 0.5rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-username {
+            color: #4ecdc4;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.7;
+            grid-column: 1/-1;
+        }
+
+        .search-highlight {
+            background: rgba(255, 235, 59, 0.3);
+            padding: 0 0.2rem;
+            border-radius: 3px;
+        }
+
+        .stream-link {
+            background: rgba(78, 205, 196, 0.1);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .stream-link.active {
+            display: block;
+        }
+
+        .stream-link-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #4ecdc4;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover {
+            background: #45b7a8;
+        }
+
+        .error-message {
+            color: #ff4757;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav-search {
+                order: -1;
+                margin: 0;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stream-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-container, .main-search {
+                flex-direction: column;
+            }
+            
+            .search-input, .main-search-input {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">StreamShare</div>
+        <div class="nav-search">
+            <input type="text" id="nav-search-input" class="nav-search-input" placeholder="Search streams or users..." onkeypress="handleNavSearch(event)">
+            <button onclick="performNavSearch()" style="background: none; border: none; color: #4ecdc4; cursor: pointer;">🔍</button>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="nav-link" onclick="showPage('home')">Home</a>
+            <a href="#" class="nav-link" onclick="showPage('browse')">Browse</a>
+            <div id="auth-links">
+                <a href="#" class="nav-link" onclick="showPage('login')">Login</a>
+                <a href="#" class="nav-link btn btn-primary" onclick="showPage('signup')">Sign Up</a>
+            </div>
+            <div id="user-links" class="hidden">
+                <a href="#" class="nav-link" onclick="showPage('dashboard')">Dashboard</a>
+                <div class="user-info">
+                    <div class="avatar" id="user-avatar">U</div>
+                    <span id="username-display"></span>
+                    <a href="#" class="nav-link" onclick="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Page -->
+    <div id="home-page" class="page active">
+        <div class="container">
+            <div class="hero">
+                <h1>Stream. Share. Connect.</h1>
+                <p>Share your screen and connect with viewers in real-time with zero setup required</p>
+                <div class="main-search">
+                    <input type="text" id="main-search-input" class="main-search-input" placeholder="Search for streams, users, or topics...">
+                    <button class="main-search-btn" onclick="performMainSearch()">Search</button>
+                </div>
+                <a href="#" class="btn btn-primary" onclick="showPage('signup')">Start Streaming</a>
+            </div>
+            <h2>Live Streams</h2>
+            <div class="streams-grid" id="home-streams"></div>
+        </div>
+    </div>
+
+    <!-- Browse Page -->
+    <div id="browse-page" class="page">
+        <div class="container">
+            <h1>Browse Live Streams</h1>
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search streams, users, categories...">
+                <button class="search-btn" onclick="performSearch()">🔍</button>
+            </div>
+            <div class="filter-controls">
+                <select id="category-filter" class="filter-select" onchange="filterStreams()">
+                    <option value="">All Categories</option>
+                    <option value="Gaming">Gaming</option>
+                    <option value="Education">Education</option>
+                    <option value="IRL">IRL</option>
+                    <option value="Art">Art & Design</option>
+                    <option value="Music">Music</option>
+                    <option value="Tech">Technology</option>
+                </select>
+                <select id="sort-filter" class="filter-select" onchange="filterStreams()">
+                    <option value="viewers">Sort by Viewers</option>
+                    <option value="recent">Most Recent</option>
+                    <option value="title">Alphabetical</option>
+                </select>
+                <div class="live-count">
+                    <span id="live-stream-count">0</span> streams live
+                </div>
+            </div>
+            <div class="streams-grid" id="browse-streams"></div>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page">
+        <div class="container">
+            <form class="auth-form" onsubmit="handleLogin(event)">
+                <h2 style="text-align: center; margin-bottom: 2rem;">Login to StreamShare</h2>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                    <div id="login-email-error" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required>
+                    <div id="login-password-error" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="login-btn">Login</button>
+                <div id="login-form-error" class="error-message" style="text-align: center;"></div>
+                <p style="text-align: center; margin-top: 1rem; opacity: 0.8;">
+                    Don't have an account? <a href="#" onclick="showPage('signup')" style="color: #4ecdc4;">Sign up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sign Up Page -->
+    <div id="signup-page" class="page">
+        <div class="container">
+            <form class="auth-form" onsubmit="handleSignup(event)">
+                <h2 style="text-align: center; margin-bottom: 2rem;">Create Your Account</h2>
+                <div class="form-group">
+                    <label for="signup-username">Username</label>
+                    <input type="text" id="signup-username" required minlength="3" maxlength="20">
+                    <div id="signup-username-error" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" required>
+                    <div id="signup-email-error" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required minlength="6">
+                    <div id="signup-password-error" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" required>
+                    <div id="signup-confirm-password-error" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-bio">Bio (Optional)</label>
+                    <textarea id="signup-bio" rows="3" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="signup-btn">Create Account</button>
+                <div id="signup-form-error" class="error-message" style="text-align: center;"></div>
+                <div id="signup-form-success" class="success-message" style="text-align: center;"></div>
+                <p style="text-align: center; margin-top: 1rem; opacity: 0.8;">
+                    Already have an account? <a href="#" onclick="showPage('login')" style="color: #4ecdc4;">Login</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="page">
+        <div class="container">
+            <h1>Your Dashboard</h1>
+            <div class="dashboard">
+                <div class="dashboard-card">
+                    <h3>Stream Controls</h3>
+                    <div class="form-group">
+                        <label for="stream-title">Stream Title</label>
+                        <input type="text" id="stream-title" placeholder="What are you streaming today?" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="stream-category">Category</label>
+                        <select id="stream-category">
+                            <option value="Gaming">Gaming</option>
+                            <option value="Education">Education</option>
+                            <option value="IRL">IRL</option>
+                            <option value="Art">Art & Design</option>
+                            <option value="Music">Music</option>
+                            <option value="Tech">Technology</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="stream-description">Description (Optional)</label>
+                        <textarea id="stream-description" rows="3" placeholder="Tell viewers what you're streaming..." maxlength="500"></textarea>
+                    </div>
+                    <div class="stream-controls">
+                        <button id="go-live-btn" class="btn btn-live" onclick="toggleStream()">Go Live</button>
+                        <button class="control-btn" id="audio-btn" onclick="toggleAudio()">🎤 Audio: ON</button>
+                        <button class="control-btn" id="quality-btn" onclick="toggleQuality()">📺 Quality: HD</button>
+                    </div>
+                    
+                    <!-- Stream Link Section -->
+                    <div id="stream-link-section" class="stream-link">
+                        <h4>Stream Link:</h4>
+                        <input type="text" id="stream-link-input" class="stream-link-input" readonly>
+                        <button class="copy-btn" onclick="copyStreamLink()">Copy Link</button>
+                    </div>
+                    
+                    <div id="stream-preview" style="margin-top: 1rem; display: none;">
+                        <video id="preview-video" autoplay muted style="width: 100%; border-radius: 8px;"></video>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Your Stats</h3>
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 2rem;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #4ecdc4;" id="viewer-count">0</div>
+                            <div style="opacity: 0.8;">Current Viewers</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 2rem;">
+                        <h4>Stream Status</h4>
+                        <p id="stream-status" style="color: #4ecdc4; margin-top: 0.5rem;">Offline</p>
+                        <p id="stream-duration" style="opacity: 0.7; margin-top: 0.5rem;">Duration: 00:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stream View Page -->
+    <div id="stream-page" class="page">
+        <div class="container">
+            <div class="stream-layout">
+                <div>
+                    <div class="video-container">
+                        <div class="video-player" id="video-player">
+                            <video id="stream-video" class="stream-video" autoplay style="display: none;"></video>
+                            <div id="video-placeholder">🎥 Stream will appear here</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <h2 id="stream-page-title">Stream Title</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <div>
+                                <span class="stream-streamer" id="stream-page-streamer">Streamer Name</span>
+                                <span class="stream-category" id="stream-page-category">Category</span>
+                            </div>
+                            <div class="viewer-count" id="stream-page-viewers">0 viewers</div>
+                        </div>
+                        <div style="margin-top: 1rem;">
+                            <p id="stream-page-description" style="opacity: 0.8;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-header">Live Chat</div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message">
+                            <span class="chat-username">StreamBot:</span>
+                            <span>Welcome to the stream!</span>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKey(event)">
+                        <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let isStreaming = false;
+        let localStream = null;
+        let audioEnabled = true;
+        let qualityHD = true;
+        let searchTerm = '';
+        let streamStartTime = null;
+        let durationInterval = null;
+        let currentStreamId = null;
+        let viewerCount = 0;
+        let syncInterval = null;
+
+        // Enhanced Database with cross-browser file-based sync simulation
+        class StreamShareDB {
+            constructor() {
+                this.storageKey = 'streamshare_data';
+                this.broadcastChannel = null;
+                this.data = this.loadData();
+                this.initializeData();
+                this.setupCrossBrowserSync();
+                this.startPeriodicSync();
+            }
+
+            loadData() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : null;
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                    return null;
+                }
+            }
+
+            initializeData() {
+                if (!this.data) {
+                    this.data = {
+                        users: new Map(),
+                        streams: new Map(),
+                        lastUpdated: Date.now(),
+                        instanceId: this.generateInstanceId()
+                    };
+                    this.saveData();
+                }
+                // Convert stored objects back to Maps
+                if (this.data.users && !(this.data.users instanceof Map)) {
+                    this.data.users = new Map(Object.entries(this.data.users));
+                }
+                if (this.data.streams && !(this.data.streams instanceof Map)) {
+                    this.data.streams = new Map(Object.entries(this.data.streams));
+                }
+                
+                // Ensure instance ID exists
+                if (!this.data.instanceId) {
+                    this.data.instanceId = this.generateInstanceId();
+                }
+            }
+
+            generateInstanceId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+            }
+
+            setupCrossBrowserSync() {
+                try {
+                    // Try to use BroadcastChannel for same-browser sync
+                    this.broadcastChannel = new BroadcastChannel('streamshare_sync');
+                    this.broadcastChannel.onmessage = (event) => {
+                        this.handleBroadcastMessage(event.data);
+                    };
+                } catch (e) {
+                    console.log('BroadcastChannel not supported');
+                }
+
+                // Listen for storage events (works within same browser)
+                window.addEventListener('storage', (e) => {
+                    if (e.key === this.storageKey && e.newValue) {
+                        this.handleStorageChange(e.newValue);
+                    }
+                });
+
+                // Use shared storage key with timestamp for cross-browser detection
+                window.addEventListener('focus', () => {
+                    this.checkForExternalUpdates();
+                });
+            }
+
+            startPeriodicSync() {
+                // Check for updates every 2 seconds
+                setInterval(() => {
+                    this.checkForExternalUpdates();
+                }, 2000);
+            }
+
+            checkForExternalUpdates() {
+                try {
+                    const currentData = localStorage.getItem(this.storageKey);
+                    if (currentData) {
+                        const parsedData = JSON.parse(currentData);
+                        if (parsedData.lastUpdated > this.data.lastUpdated && 
+                            parsedData.instanceId !== this.data.instanceId) {
+                            // Data was updated by another browser instance
+                            this.handleExternalUpdate(parsedData);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error checking for updates:', e);
+                }
+            }
+
+            handleBroadcastMessage(data) {
+                if (data.instanceId === this.data.instanceId) return; // Ignore own messages
+                
+                switch (data.type) {
+                    case 'STREAM_CREATED':
+                        this.data.streams.set(data.stream.id, data.stream);
+                        this.saveDataSilent();
+                        this.triggerUIUpdate();
+                        break;
+                    case 'STREAM_UPDATED':
+                        if (this.data.streams.has(data.stream.id)) {
+                            this.data.streams.set(data.stream.id, data.stream);
+                            this.saveDataSilent();
+                            this.triggerUIUpdate();
+                        }
+                        break;
+                    case 'STREAM_DELETED':
+                        this.data.streams.delete(data.streamId);
+                        this.saveDataSilent();
+                        this.triggerUIUpdate();
+                        break;
+                }
+            }
+
+            handleStorageChange(newValue) {
+                try {
+                    const newData = JSON.parse(newValue);
+                    if (newData.instanceId !== this.data.instanceId && 
+                        newData.lastUpdated > this.data.lastUpdated) {
+                        this.handleExternalUpdate(newData);
+                    }
+                } catch (e) {
+                    console.error('Error handling storage change:', e);
+                }
+            }
+
+            handleExternalUpdate(newData) {
+                // Update with newer data from another browser
+                this.data.lastUpdated = newData.lastUpdated;
+                
+                // Merge streams (convert back to Map)
+                const newStreams = new Map(Object.entries(newData.streams || {}));
+                let hasChanges = false;
+
+                // Add/update new streams
+                for (const [id, stream] of newStreams) {
+                    if (!this.data.streams.has(id) || 
+                        this.data.streams.get(id).lastUpdated < stream.lastUpdated) {
+                        this.data.streams.set(id, stream);
+                        hasChanges = true;
+                    }
+                }
+
+                // Remove streams that no longer exist
+                for (const id of this.data.streams.keys()) {
+                    if (!newStreams.has(id)) {
+                        this.data.streams.delete(id);
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges) {
+                    this.triggerUIUpdate();
+                }
+            }
+
+            triggerUIUpdate() {
+                // Update UI if functions are available
+                setTimeout(() => {
+                    if (window.loadStreams) window.loadStreams();
+                    if (window.filterStreams) window.filterStreams();
+                }, 100);
+            }
+
+            saveData() {
+                this.data.lastUpdated = Date.now();
+                this.saveDataSilent();
+            }
+
+            saveDataSilent() {
+                try {
+                    // Convert Maps to objects for storage
+                    const dataToStore = {
+                        users: Object.fromEntries(this.data.users),
+                        streams: Object.fromEntries(this.data.streams),
+                        lastUpdated: this.data.lastUpdated,
+                        instanceId: this.data.instanceId
+                    };
+                    localStorage.setItem(this.storageKey, JSON.stringify(dataToStore));
+                } catch (e) {
+                    console.error('Error saving data:', e);
+                }
+            }
+
+            // Broadcast changes to other instances
+            broadcastChange(type, data) {
+                const message = {
+                    type,
+                    ...data,
+                    instanceId: this.data.instanceId,
+                    timestamp: Date.now()
+                };
+
+                // Try BroadcastChannel first (same browser)
+                if (this.broadcastChannel) {
+                    try {
+                        this.broadcastChannel.postMessage(message);
+                    } catch (e) {
+                        console.log('BroadcastChannel send failed:', e);
+                    }
+                }
+
+                // Force storage event for cross-browser sync
+                setTimeout(() => {
+                    try {
+                        // Create a temporary storage event to trigger sync
+                        const tempKey = 'streamshare_sync_' + Date.now();
+                        localStorage.setItem(tempKey, JSON.stringify(message));
+                        localStorage.removeItem(tempKey);
+                        
+                        // Also update main storage to ensure persistence
+                        this.saveDataSilent();
+                    } catch (e) {
+                        console.log('Storage sync failed:', e);
+                    }
+                }, 50);
+            }
+
+            // User management
+            createUser(userData) {
+                const existingUser = Array.from(this.data.users.values()).find(
+                    user => user.email === userData.email || user.username === userData.username
+                );
+                
+                if (existingUser) {
+                    throw new Error(
+                        existingUser.email === userData.email 
+                            ? 'Email already registered' 
+                            : 'Username already taken'
+                    );
+                }
+
+                const user = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    username: userData.username,
+                    email: userData.email,
+                    password: this.hashPassword(userData.password),
+                    bio: userData.bio || '',
+                    createdAt: Date.now(),
+                    lastLogin: null
+                };
+
+                this.data.users.set(user.id, user);
+                this.saveData();
+                return { ...user, password: undefined }; // Don't return password
+            }
+
+            authenticateUser(email, password) {
+                const user = Array.from(this.data.users.values()).find(
+                    user => user.email === email
+                );
+                
+                if (!user || !this.verifyPassword(password, user.password)) {
+                    throw new Error('Invalid email or password');
+                }
+
+                user.lastLogin = Date.now();
+                this.data.users.set(user.id, user);
+                this.saveData();
+                return { ...user, password: undefined }; // Don't return password
+            }
+
+            // Simple password hashing (in real app, use bcrypt or similar)
+            hashPassword(password) {
+                return btoa(password + 'salt123'); // Very basic encoding
+            }
+
+            verifyPassword(password, hash) {
+                return this.hashPassword(password) === hash;
+            }
+
+            // Stream management with enhanced cross-browser broadcasting
+            createStream(streamData) {
+                const stream = {
+                    id: streamData.id,
+                    title: streamData.title,
+                    streamer: streamData.streamer,
+                    streamerId: streamData.streamerId,
+                    category: streamData.category,
+                    description: streamData.description,
+                    viewers: 0,
+                    isLive: true,
+                    startTime: streamData.startTime,
+                    createdAt: Date.now(),
+                    lastUpdated: Date.now()
+                };
+
+                this.data.streams.set(stream.id, stream);
+                this.saveData();
+                
+                // Broadcast to other browser instances
+                this.broadcastChange('STREAM_CREATED', { stream });
+                
+                return stream;
+            }
+
+            updateStream(streamId, updates) {
+                if (this.data.streams.has(streamId)) {
+                    const stream = { 
+                        ...this.data.streams.get(streamId), 
+                        ...updates,
+                        lastUpdated: Date.now()
+                    };
+                    this.data.streams.set(streamId, stream);
+                    this.saveData();
+                    
+                    // Broadcast to other browser instances
+                    this.broadcastChange('STREAM_UPDATED', { stream });
+                    
+                    return stream;
+                }
+                return null;
+            }
+
+            deleteStream(streamId) {
+                const deleted = this.data.streams.delete(streamId);
+                if (deleted) {
+                    this.saveData();
+                    
+                    // Broadcast to other browser instances
+                    this.broadcastChange('STREAM_DELETED', { streamId });
+                }
+                return deleted;
+            }
+
+            getActiveStreams() {
+                return Array.from(this.data.streams.values()).filter(stream => stream.isLive);
+            }
+
+            getStream(streamId) {
+                return this.data.streams.get(streamId);
+            }
+
+            // Clean up old streams
+            cleanupStreams() {
+                const now = Date.now();
+                const maxAge = 6 * 60 * 60 * 1000; // 6 hours
+                
+                for (const [id, stream] of this.data.streams.entries()) {
+                    if (now - stream.createdAt > maxAge) {
+                        this.data.streams.delete(id);
+                    }
+                }
+                this.saveData();
+            }
+        }
+
+        // Initialize database
+        const db = new StreamShareDB();
+
+        // Make functions globally accessible for cross-browser sync
+        window.loadStreams = loadStreams;
+        window.filterStreams = filterStreams;
+
+        // Initialize app
+        function init() {
+            // Clean up old streams on startup
+            db.cleanupStreams();
+            
+            // Check for saved login session
+            const savedUserId = localStorage.getItem('streamshare_current_user');
+            if (savedUserId && db.data.users.has(savedUserId)) {
+                currentUser = db.data.users.get(savedUserId);
+                updateAuthUI();
+            }
+            
+            loadStreams();
+            setupSearch();
+            showNotification('Welcome to StreamShare! Cross-browser sync enabled.', 'info');
+        }
+
+        // Remove the old sync loop since we now use BroadcastChannel
+        // Cross-browser synchronization is handled automatically
+
+        // Page navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId + '-page').classList.add('active');
+            
+            if (pageId === 'browse') {
+                filterStreams();
+            } else if (pageId === 'home') {
+                loadStreams();
+            }
+            
+            // Clear form errors when navigating
+            clearFormErrors();
+        }
+
+        function clearFormErrors() {
+            document.querySelectorAll('.error-message, .success-message').forEach(el => {
+                el.textContent = '';
+            });
+        }
+
+        // Enhanced Authentication
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const submitBtn = document.getElementById('login-btn');
+            
+            clearFormErrors();
+            
+            if (!email || !password) {
+                document.getElementById('login-form-error').textContent = 'Please fill in all fields';
+                return;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.textContent = 'Logging in...';
+            
+            try {
+                setTimeout(() => { // Simulate network delay
+                    try {
+                        currentUser = db.authenticateUser(email, password);
+                        localStorage.setItem('streamshare_current_user', currentUser.id);
+                        
+                        updateAuthUI();
+                        showNotification(`Welcome back, ${currentUser.username}!`, 'success');
+                        showPage('dashboard');
+                    } catch (error) {
+                        document.getElementById('login-form-error').textContent = error.message;
+                    } finally {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.textContent = 'Login';
+                    }
+                }, 800);
+            } catch (error) {
+                document.getElementById('login-form-error').textContent = 'Login failed. Please try again.';
+                submitBtn.classList.remove('loading');
+                submitBtn.textContent = 'Login';
+            }
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('signup-username').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            const bio = document.getElementById('signup-bio').value.trim();
+            const submitBtn = document.getElementById('signup-btn');
+            
+            clearFormErrors();
+            
+            // Validation
+            if (!username || !email || !password) {
+                document.getElementById('signup-form-error').textContent = 'Please fill in all required fields';
+                return;
+            }
+            
+            if (username.length < 3) {
+                document.getElementById('signup-username-error').textContent = 'Username must be at least 3 characters';
+                return;
+            }
+            
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                document.getElementById('signup-username-error').textContent = 'Username can only contain letters, numbers, and underscores';
+                return;
+            }
+            
+            if (password.length < 6) {
+                document.getElementById('signup-password-error').textContent = 'Password must be at least 6 characters';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                document.getElementById('signup-confirm-password-error').textContent = 'Passwords do not match';
+                return;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.textContent = 'Creating Account...';
+            
+            setTimeout(() => { // Simulate network delay
+                try {
+                    currentUser = db.createUser({
+                        username,
+                        email,
+                        password,
+                        bio
+                    });
+                    
+                    localStorage.setItem('streamshare_current_user', currentUser.id);
+                    
+                    document.getElementById('signup-form-success').textContent = 'Account created successfully!';
+                    
+                    setTimeout(() => {
+                        updateAuthUI();
+                        showNotification(`Welcome to StreamShare, ${currentUser.username}!`, 'success');
+                        showPage('dashboard');
+                    }, 1000);
+                    
+                } catch (error) {
+                    document.getElementById('signup-form-error').textContent = error.message;
+                } finally {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.textContent = 'Create Account';
+                }
+            }, 1000);
+        }
+
+        function logout() {
+            if (isStreaming) {
+                stopStream();
+            }
+            
+            localStorage.removeItem('streamshare_current_user');
+            currentUser = null;
+            updateAuthUI();
+            showNotification('Logged out successfully', 'info');
+            showPage('home');
+        }
+
+        function updateAuthUI() {
+            const authLinks = document.getElementById('auth-links');
+            const userLinks = document.getElementById('user-links');
+            
+            if (currentUser) {
+                authLinks.classList.add('hidden');
+                userLinks.classList.remove('hidden');
+                document.getElementById('username-display').textContent = currentUser.username;
+                document.getElementById('user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            } else {
+                authLinks.classList.remove('hidden');
+                userLinks.classList.add('hidden');
+            }
+        }
+
+        // Search functionality
+        function setupSearch() {
+            const inputs = ['search-input', 'main-search-input', 'nav-search-input'];
+            inputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', () => {
+                        searchTerm = input.value.toLowerCase().trim();
+                        if (document.getElementById('browse-page').classList.contains('active')) {
+                            filterStreams();
+                        }
+                    });
+                }
+            });
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchTerm = searchInput.value.toLowerCase().trim();
+            filterStreams();
+        }
+
+        function performMainSearch() {
+            const searchInput = document.getElementById('main-search-input');
+            searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // Copy to other search inputs
+            document.getElementById('search-input').value = searchInput.value;
+            document.getElementById('nav-search-input').value = searchInput.value;
+            
+            showPage('browse');
+            filterStreams();
+        }
+
+        function performNavSearch() {
+            const searchInput = document.getElementById('nav-search-input');
+            searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // Copy to other search inputs
+            document.getElementById('search-input').value = searchInput.value;
+            document.getElementById('main-search-input').value = searchInput.value;
+            
+            showPage('browse');
+            filterStreams();
+        }
+
+        function handleNavSearch(event) {
+            if (event.key === 'Enter') {
+                performNavSearch();
+            }
+        }
+
+        function filterStreams() {
+            const categoryFilter = document.getElementById('category-filter')?.value || '';
+            const sortFilter = document.getElementById('sort-filter')?.value || 'viewers';
+            
+            let filtered = db.getActiveStreams();
+            
+            // Apply search across title, streamer, category, and description
+            if (searchTerm) {
+                filtered = filtered.filter(stream => 
+                    stream.title.toLowerCase().includes(searchTerm) ||
+                    stream.streamer.toLowerCase().includes(searchTerm) ||
+                    stream.category.toLowerCase().includes(searchTerm) ||
+                    (stream.description && stream.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Apply category filter
+            if (categoryFilter) {
+                filtered = filtered.filter(stream => stream.category === categoryFilter);
+            }
+            
+            // Apply sorting
+            switch (sortFilter) {
+                case 'viewers':
+                    filtered.sort((a, b) => b.viewers - a.viewers);
+                    break;
+                case 'recent':
+                    filtered.sort((a, b) => b.startTime - a.startTime);
+                    break;
+                case 'title':
+                    filtered.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+            }
+            
+            displayStreams('browse-streams', filtered);
+            updateLiveCount();
+        }
+
+        // Enhanced streaming with cross-browser visibility
+        async function toggleStream() {
+            if (!currentUser) {
+                showNotification('Please log in first', 'error');
+                return;
+            }
+
+            if (!isStreaming) {
+                await startStream();
+            } else {
+                stopStream();
+            }
+        }
+
+        async function startStream() {
+            try {
+                const title = document.getElementById('stream-title').value.trim();
+                const category = document.getElementById('stream-category').value;
+                const description = document.getElementById('stream-description').value.trim();
+                
+                if (!title) {
+                    showNotification('Please enter a stream title', 'error');
+                    return;
+                }
+
+                showNotification('Starting stream... Please allow screen sharing', 'info');
+
+                // Request screen sharing with audio
+                const constraints = {
+                    video: {
+                        mediaSource: 'screen',
+                        width: qualityHD ? 1920 : 1280,
+                        height: qualityHD ? 1080 : 720,
+                        frameRate: qualityHD ? 30 : 24
+                    },
+                    audio: audioEnabled
+                };
+
+                localStream = await navigator.mediaDevices.getDisplayMedia(constraints);
+
+                // Add microphone if audio enabled
+                if (audioEnabled) {
+                    try {
+                        const audioStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: {
+                                echoCancellation: true,
+                                noiseSuppression: true,
+                                autoGainControl: true
+                            } 
+                        });
+                        const audioTrack = audioStream.getAudioTracks()[0];
+                        if (audioTrack) {
+                            localStream.addTrack(audioTrack);
+                        }
+                    } catch (err) {
+                        console.log('Microphone access denied, continuing without mic');
+                    }
+                }
+
+                // Show preview
+                const previewVideo = document.getElementById('preview-video');
+                const previewContainer = document.getElementById('stream-preview');
+                previewVideo.srcObject = localStream;
+                previewContainer.style.display = 'block';
+
+                // Update UI
+                isStreaming = true;
+                streamStartTime = Date.now();
+                currentStreamId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                viewerCount = 0;
+                
+                const goLiveBtn = document.getElementById('go-live-btn');
+                goLiveBtn.textContent = 'Stop Stream';
+                goLiveBtn.classList.add('streaming');
+                
+                document.getElementById('stream-status').textContent = 'Live';
+                document.getElementById('stream-status').style.color = '#ff4757';
+                
+                // Generate and display stream link
+                const streamLink = `${window.location.origin}${window.location.pathname}?stream=${currentStreamId}`;
+                document.getElementById('stream-link-input').value = streamLink;
+                document.getElementById('stream-link-section').classList.add('active');
+                
+                // Start duration counter
+                startDurationCounter();
+
+                // Save stream to database (cross-browser accessible)
+                const newStream = db.createStream({
+                    id: currentStreamId,
+                    title: title,
+                    streamer: currentUser.username,
+                    streamerId: currentUser.id,
+                    category: category,
+                    description: description,
+                    startTime: streamStartTime
+                });
+                
+                // Update displays for all browsers
+                loadStreams();
+                filterStreams();
+                
+                document.getElementById('viewer-count').textContent = '0';
+
+                // Handle stream end when user stops screen sharing
+                localStream.getVideoTracks()[0].onended = () => {
+                    stopStream();
+                };
+
+                showNotification(`You are now LIVE! Share your link: ${streamLink}`, 'success');
+
+            } catch (err) {
+                console.error('Error starting stream:', err);
+                showNotification('Unable to start stream. Please allow screen sharing and try again.', 'error');
+                resetStreamUI();
+            }
+        }
+
+        function stopStream() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            // Reset UI
+            isStreaming = false;
+            const goLiveBtn = document.getElementById('go-live-btn');
+            goLiveBtn.textContent = 'Go Live';
+            goLiveBtn.classList.remove('streaming');
+            
+            document.getElementById('stream-status').textContent = 'Offline';
+            document.getElementById('stream-status').style.color = '#4ecdc4';
+            document.getElementById('stream-preview').style.display = 'none';
+            document.getElementById('viewer-count').textContent = '0';
+            document.getElementById('stream-link-section').classList.remove('active');
+
+            // Stop duration counter
+            if (durationInterval) {
+                clearInterval(durationInterval);
+                durationInterval = null;
+            }
+            document.getElementById('stream-duration').textContent = 'Duration: 00:00';
+
+            // Remove from database (affects all browsers)
+            if (currentStreamId) {
+                db.deleteStream(currentStreamId);
+                currentStreamId = null;
+            }
+            
+            viewerCount = 0;
+            loadStreams();
+            filterStreams();
+            
+            showNotification('Stream ended', 'info');
+        }
+
+        function resetStreamUI() {
+            isStreaming = false;
+            const goLiveBtn = document.getElementById('go-live-btn');
+            goLiveBtn.textContent = 'Go Live';
+            goLiveBtn.classList.remove('streaming');
+            
+            document.getElementById('stream-status').textContent = 'Offline';
+            document.getElementById('stream-status').style.color = '#4ecdc4';
+            document.getElementById('stream-preview').style.display = 'none';
+            document.getElementById('stream-link-section').classList.remove('active');
+        }
+
+        function copyStreamLink() {
+            const linkInput = document.getElementById('stream-link-input');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                showNotification('Stream link copied to clipboard!', 'success');
+            } catch (err) {
+                navigator.clipboard.writeText(linkInput.value).then(() => {
+                    showNotification('Stream link copied to clipboard!', 'success');
+                }).catch(() => {
+                    showNotification('Could not copy link. Please copy manually.', 'error');
+                });
+            }
+        }
+
+        function startDurationCounter() {
+            durationInterval = setInterval(() => {
+                if (streamStartTime) {
+                    const duration = Date.now() - streamStartTime;
+                    const minutes = Math.floor(duration / 60000);
+                    const seconds = Math.floor((duration % 60000) / 1000);
+                    document.getElementById('stream-duration').textContent = 
+                        `Duration: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const audioBtn = document.getElementById('audio-btn');
+            audioBtn.textContent = audioEnabled ? '🎤 Audio: ON' : '🎤 Audio: OFF';
+            
+            if (localStream) {
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = audioEnabled;
+                });
+            }
+        }
+
+        function toggleQuality() {
+            qualityHD = !qualityHD;
+            const qualityBtn = document.getElementById('quality-btn');
+            qualityBtn.textContent = qualityHD ? '📺 Quality: HD' : '📺 Quality: SD';
+        }
+
+        // Stream display functions
+        function loadStreams() {
+            const liveStreams = db.getActiveStreams();
+            displayStreams('home-streams', liveStreams.slice(0, 8));
+            updateLiveCount();
+        }
+
+        function displayStreams(containerId, streams) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (streams.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <h3>No live streams</h3>
+                        <p>Be the first to go live! Create an account and start streaming.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = streams.map(stream => createStreamCard(stream)).join('');
+        }
+
+        function createStreamCard(stream) {
+            const duration = formatDuration(Date.now() - stream.startTime);
+            const highlighted = searchTerm ? highlightText(stream.title, searchTerm) : stream.title;
+            const highlightedStreamer = searchTerm ? highlightText(stream.streamer, searchTerm) : stream.streamer;
+            
+            return `
+                <div class="stream-card" onclick="watchStream('${stream.id}')">
+                    <div class="stream-thumbnail">
+                        <div class="live-indicator">LIVE</div>
+                        <div class="viewer-count">${stream.viewers} viewers</div>
+                        <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">
+                            🔴 ${duration}
+                        </div>
+                        <div style="font-size: 3rem; color: rgba(255,255,255,0.7);">🎥</div>
+                    </div>
+                    <div class="stream-info">
+                        <div class="stream-title">${highlighted}</div>
+                        <div class="stream-streamer">${highlightedStreamer}</div>
+                        <div class="stream-category">${stream.category}</div>
+                        ${stream.description ? `<div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${stream.description}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightText(text, term) {
+            if (!term) return text;
+            const regex = new RegExp(`(${term})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
+        function updateLiveCount() {
+            const count = db.getActiveStreams().length;
+            const element = document.getElementById('live-stream-count');
+            if (element) {
+                element.textContent = count;
+            }
+        }
+
+        // Stream watching functionality
+        function watchStream(streamId) {
+            const stream = db.getStream(streamId);
+            if (!stream || !stream.isLive) {
+                showNotification('Stream not found or ended', 'error');
+                return;
+            }
+            
+            // Increment viewer count
+            db.updateStream(streamId, { viewers: stream.viewers + 1 });
+            const updatedStream = db.getStream(streamId);
+            
+            if (updatedStream.streamerId === currentUser?.id) {
+                document.getElementById('viewer-count').textContent = updatedStream.viewers;
+            }
+            
+            // Update stream page
+            document.getElementById('stream-page-title').textContent = updatedStream.title;
+            document.getElementById('stream-page-streamer').textContent = updatedStream.streamer;
+            document.getElementById('stream-page-category').textContent = updatedStream.category;
+            document.getElementById('stream-page-viewers').textContent = `${updatedStream.viewers} viewers`;
+            document.getElementById('stream-page-description').textContent = updatedStream.description || '';
+            
+            // Setup video placeholder (real streaming would require WebRTC/server)
+            const videoElement = document.getElementById('stream-video');
+            const placeholder = document.getElementById('video-placeholder');
+            
+            videoElement.style.display = 'none';
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">📡</div>
+                    <h3>${updatedStream.title}</h3>
+                    <p style="opacity: 0.7; margin: 0.5rem 0;">by ${updatedStream.streamer}</p>
+                    <p style="opacity: 0.5; font-size: 0.9rem;">Stream content would appear here with proper WebRTC implementation</p>
+                </div>
+            `;
+            
+            // Setup chat
+            setupStreamChat(updatedStream);
+            showPage('stream');
+            
+            showNotification(`Now watching ${updatedStream.streamer}'s stream`, 'info');
+        }
+
+        function setupStreamChat(stream) {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="chat-message">
+                    <span class="chat-username">StreamBot:</span>
+                    <span>Welcome to ${stream.streamer}'s stream!</span>
+                </div>
+            `;
+        }
+
+        // Chat functionality
+        function handleChatKey(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!currentUser) {
+                showNotification('Please log in to chat', 'error');
+                return;
+            }
+            
+            const container = document.getElementById('chat-messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+            messageEl.innerHTML = `
+                <span class="chat-username">${currentUser.username}:</span>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(messageEl);
+            container.scrollTop = container.scrollHeight;
+            input.value = '';
+        }
+
+        // Check for stream ID in URL
+        function checkStreamUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const streamId = urlParams.get('stream');
+            
+            if (streamId) {
+                // Wait a moment for streams to load, then try to watch
+                setTimeout(() => {
+                    watchStream(streamId);
+                }, 1000);
+            }
+        }
+
+        // Notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                info: '#4ecdc4',
+                error: '#ff4757',
+                success: '#2ecc71'
+            };
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 1000;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // Add notification animations
+        const notificationStyles = document.createElement('style');
+        notificationStyles.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(notificationStyles);
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+            }
+            if (isStreaming) {
+                stopStream();
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            checkStreamUrl();
+        });
+    </script>
+</body>
+</html>
